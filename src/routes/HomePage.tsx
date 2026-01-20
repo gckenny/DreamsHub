@@ -1,22 +1,79 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ClipboardCheck,
   Trophy,
-  Users,
-  Timer,
-  BarChart3,
-  QrCode,
   LogOut,
   Loader2,
+  Calendar,
+  MapPin,
+  Users,
+  ChevronRight,
+  Clock,
+  Waves,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
+
+// Mock data for competitions
+const competitions = [
+  {
+    id: "1",
+    name: "2026 夢想盃游泳錦標賽",
+    date: "2026-03-15",
+    endDate: "2026-03-16",
+    location: "台北市立大學天母校區游泳池",
+    poolType: "50m",
+    status: "registration" as const,
+    registrationDeadline: "2026-03-01",
+    participantCount: 328,
+    eventCount: 42,
+    imageUrl: "/images/dreams-cup.jpg",
+  },
+  {
+    id: "2",
+    name: "2026 春季分齡游泳賽",
+    date: "2026-04-20",
+    endDate: "2026-04-21",
+    location: "新北市立三重國民運動中心",
+    poolType: "25m",
+    status: "upcoming" as const,
+    registrationDeadline: "2026-04-05",
+    participantCount: 0,
+    eventCount: 36,
+    imageUrl: "/images/spring-meet.jpg",
+  },
+  {
+    id: "3",
+    name: "2025 冬季游泳挑戰賽",
+    date: "2025-12-10",
+    endDate: "2025-12-10",
+    location: "高雄市立國際游泳池",
+    poolType: "50m",
+    status: "completed" as const,
+    registrationDeadline: "2025-11-25",
+    participantCount: 256,
+    eventCount: 28,
+    imageUrl: "/images/winter-challenge.jpg",
+  },
+];
+
+const statusConfig = {
+  registration: {
+    label: "報名中",
+    color: "bg-green-100 text-green-800 border-green-200",
+  },
+  upcoming: {
+    label: "即將開始",
+    color: "bg-blue-100 text-blue-800 border-blue-200",
+  },
+  in_progress: {
+    label: "進行中",
+    color: "bg-orange-100 text-orange-800 border-orange-200",
+  },
+  completed: {
+    label: "已結束",
+    color: "bg-gray-100 text-gray-600 border-gray-200",
+  },
+};
 
 export default function HomePage() {
   const { user, loading, signInWithGoogle, signOut } = useAuthStore();
@@ -37,33 +94,50 @@ export default function HomePage() {
     }
   };
 
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("zh-TW", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatDateRange = (start: string, end: string) => {
+    if (start === end) {
+      return formatDate(start);
+    }
+    return `${formatDate(start)} - ${formatDate(end)}`;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">Dreams</span>
+      <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-600 p-2 rounded-lg">
+              <Waves className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Dreams</h1>
+              <p className="text-xs text-gray-500">游泳賽事管理系統</p>
+            </div>
           </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-gray-600 hover:text-gray-900">
-              功能
-            </a>
-            <a href="#pricing" className="text-gray-600 hover:text-gray-900">
-              方案
-            </a>
-            <a href="#contact" className="text-gray-600 hover:text-gray-900">
-              聯絡我們
-            </a>
-          </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {user ? (
               <>
-                <span className="text-sm text-gray-600 hidden sm:inline">
-                  {user.email}
-                </span>
-                <Button variant="ghost" onClick={handleLogout} disabled={loading}>
+                <div className="hidden sm:block text-right">
+                  <p className="text-sm font-medium text-gray-900">
+                    {user.user_metadata?.full_name || user.email?.split("@")[0]}
+                  </p>
+                  <p className="text-xs text-gray-500">{user.email}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  disabled={loading}
+                >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -73,104 +147,100 @@ export default function HomePage() {
                 </Button>
               </>
             ) : (
-              <>
-                <Button variant="ghost" onClick={handleLogin} disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  登入
-                </Button>
-                <Button onClick={handleLogin} disabled={loading}>
-                  免費試用
-                </Button>
-              </>
+              <Button onClick={handleLogin} disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                登入 / 註冊
+              </Button>
             )}
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-          游泳比賽電子化管理系統
-        </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          從報名、報到、檢錄到成績統計，一站式解決方案。
-          <br />
-          讓您的游泳賽事管理更簡單、更專業。
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" className="text-lg px-8">
-            開始使用
-          </Button>
-          <Button size="lg" variant="outline" className="text-lg px-8">
-            預約展示
-          </Button>
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        {/* Hero Banner */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 text-white">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">
+                探索游泳賽事
+              </h2>
+              <p className="text-blue-100">
+                查看即將舉行的比賽、報名參加、追蹤成績
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                className="bg-white text-blue-600 hover:bg-blue-50"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                賽事日曆
+              </Button>
+              {user && (
+                <Button
+                  variant="outline"
+                  className="border-white text-white hover:bg-white/10"
+                >
+                  我的報名
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
-      </section>
 
-      {/* Features Section */}
-      <section id="features" className="container mx-auto px-4 py-20">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-          完整的賽事管理功能
-        </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <FeatureCard
-            icon={<ClipboardCheck className="h-10 w-10 text-blue-600" />}
-            title="線上報名"
-            description="選手線上報名、項目選擇、費用計算與線上付款，一氣呵成。"
-          />
-          <FeatureCard
-            icon={<QrCode className="h-10 w-10 text-blue-600" />}
-            title="QR Code 報到"
-            description="選手掃描 QR Code 快速報到，即時掌握出席狀況。"
-          />
-          <FeatureCard
-            icon={<Users className="h-10 w-10 text-blue-600" />}
-            title="智慧檢錄"
-            description="照片比對、水道確認、退賽處理、接力組隊一次搞定。"
-          />
-          <FeatureCard
-            icon={<Timer className="h-10 w-10 text-blue-600" />}
-            title="成績管理"
-            description="支援計時系統整合，成績即時記錄與公告。"
-          />
-          <FeatureCard
-            icon={<BarChart3 className="h-10 w-10 text-blue-600" />}
-            title="統計報表"
-            description="團體總錦標、精神總錦標自動計算，報表一鍵產出。"
-          />
-          <FeatureCard
-            icon={<Trophy className="h-10 w-10 text-blue-600" />}
-            title="多租戶架構"
-            description="獨立品牌設定，讓您的賽事擁有專屬識別。"
-          />
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-blue-600 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            準備好讓您的游泳賽事升級了嗎？
-          </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            立即開始使用 Dreams，體驗全電子化的賽事管理。
-          </p>
-          <Button size="lg" variant="secondary" className="text-lg px-8">
-            免費試用 30 天
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Button variant="default" size="sm">
+            全部賽事
+          </Button>
+          <Button variant="outline" size="sm">
+            報名中
+          </Button>
+          <Button variant="outline" size="sm">
+            進行中
+          </Button>
+          <Button variant="outline" size="sm">
+            已結束
           </Button>
         </div>
-      </section>
+
+        {/* Competition List */}
+        <div className="grid gap-4">
+          {competitions.map((competition) => (
+            <CompetitionCard
+              key={competition.id}
+              competition={competition}
+              formatDateRange={formatDateRange}
+            />
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {competitions.length === 0 && (
+          <div className="text-center py-16">
+            <Trophy className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              目前沒有賽事
+            </h3>
+            <p className="text-gray-500">請稍後再回來查看新的比賽資訊</p>
+          </div>
+        )}
+      </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <Trophy className="h-6 w-6 text-blue-500" />
-              <span className="text-white font-bold">Dreams</span>
+      <footer className="bg-white border-t mt-auto">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Waves className="h-5 w-5 text-blue-600" />
+              <span className="font-semibold text-gray-900">Dreams</span>
+              <span className="text-gray-500 text-sm">游泳賽事管理系統</span>
             </div>
-            <p className="text-sm">
-              © 2026 Dreams Swimming Competition System. All rights reserved.
+            <p className="text-sm text-gray-500">
+              © 2026 Dreams Swimming Competition System
             </p>
           </div>
         </div>
@@ -179,23 +249,111 @@ export default function HomePage() {
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  description,
+function CompetitionCard({
+  competition,
+  formatDateRange,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
+  competition: (typeof competitions)[0];
+  formatDateRange: (start: string, end: string) => string;
 }) {
+  const status = statusConfig[competition.status];
+  const isRegistrationOpen = competition.status === "registration";
+  const isCompleted = competition.status === "completed";
+
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="mb-2">{icon}</div>
-        <CardTitle className="text-xl">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <CardDescription className="text-base">{description}</CardDescription>
+    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+      <CardContent className="p-0">
+        <div className="flex flex-col md:flex-row">
+          {/* Left: Color Bar */}
+          <div
+            className={`w-full md:w-2 h-2 md:h-auto rounded-t-lg md:rounded-l-lg md:rounded-tr-none ${
+              isRegistrationOpen
+                ? "bg-green-500"
+                : isCompleted
+                  ? "bg-gray-400"
+                  : "bg-blue-500"
+            }`}
+          />
+
+          {/* Content */}
+          <div className="flex-1 p-5">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              {/* Main Info */}
+              <div className="flex-1">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="bg-blue-100 p-2 rounded-lg shrink-0">
+                    <Trophy className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {competition.name}
+                      </h3>
+                      <span
+                        className={`px-2 py-0.5 text-xs font-medium rounded-full border ${status.color}`}
+                      >
+                        {status.label}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {formatDateRange(competition.date, competition.endDate)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {competition.location}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Waves className="h-4 w-4" />
+                        {competition.poolType}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <Users className="h-4 w-4" />
+                    <span>{competition.participantCount} 人報名</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <Trophy className="h-4 w-4" />
+                    <span>{competition.eventCount} 個項目</span>
+                  </div>
+                  {isRegistrationOpen && (
+                    <div className="flex items-center gap-1 text-orange-600">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        報名截止：
+                        {new Date(
+                          competition.registrationDeadline
+                        ).toLocaleDateString("zh-TW")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 shrink-0">
+                {isRegistrationOpen && (
+                  <Button className="bg-green-600 hover:bg-green-700">
+                    立即報名
+                  </Button>
+                )}
+                {isCompleted && <Button variant="outline">查看成績</Button>}
+                {!isRegistrationOpen && !isCompleted && (
+                  <Button variant="outline">查看詳情</Button>
+                )}
+                <Button variant="ghost" size="icon" className="hidden md:flex">
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
