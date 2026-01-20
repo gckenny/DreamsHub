@@ -68,11 +68,53 @@ Dreams 是一個游泳比賽電子化管理系統（SaaS），目標是取代傳
 
 - `src/routes/` - 頁面路由元件
 - `src/components/` - React 元件
-- `src/components/ui/` - shadcn/ui 基礎元件
+- `src/components/ui/` - shadcn/ui 基礎元件 (**勿直接修改**)
+- `src/components/custom/` - 客製化包裝元件 (**在此客製化**)
+- `src/components/common/` - 共用業務元件
+- `src/components/layout/` - 版面配置元件
 - `src/lib/` - 工具函式庫
 - `src/hooks/` - React Hooks
 - `src/stores/` - Zustand Stores
 - `src/types/` - TypeScript 型別定義
+
+## shadcn/ui 元件管理
+
+### 原則：Wrapper 模式
+
+- **`src/components/ui/`** - shadcn 原始元件，**禁止直接修改**
+- **`src/components/custom/`** - 包裝元件，所有客製化在此進行
+
+### 使用方式
+
+```tsx
+// 正確：從 custom 匯入
+import { Button, StatusBadge, FormField } from "@/components/custom";
+
+// 避免：直接從 ui 匯入（除非確定不需客製化）
+import { Button } from "@/components/ui/button";
+```
+
+### 升級 shadcn/ui
+
+```bash
+# 1. 查看有哪些元件可更新
+npx shadcn@latest diff
+
+# 2. 更新特定元件（會覆蓋 ui/ 內的檔案）
+npx shadcn@latest add button --overwrite
+
+# 3. custom/ 內的包裝不受影響，無需改動
+```
+
+### 新增元件
+
+```bash
+# 1. 安裝 shadcn 元件
+npx shadcn@latest add [component-name]
+
+# 2. 如需客製化，在 custom/ 建立 wrapper
+# 3. 更新 custom/index.ts 匯出
+```
 
 ## 開發指令
 
