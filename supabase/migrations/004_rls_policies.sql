@@ -39,18 +39,18 @@ ALTER TABLE payment_statuses ENABLE ROW LEVEL SECURITY;
 -- ----------------------------------------------------------------------------
 -- Helper function: Get current user's tenant ID from JWT
 -- ----------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION auth.tenant_id()
+CREATE OR REPLACE FUNCTION public.get_tenant_id()
 RETURNS UUID AS $$
     SELECT COALESCE(
-        current_setting('request.jwt.claims', true)::json->>'tenant_id',
-        current_setting('app.tenant_id', true)
-    )::UUID;
+        (current_setting('request.jwt.claims', true)::json->>'tenant_id')::UUID,
+        (current_setting('app.tenant_id', true))::UUID
+    );
 $$ LANGUAGE SQL STABLE;
 
 -- ----------------------------------------------------------------------------
 -- Helper function: Check if user has role in tenant
 -- ----------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION auth.has_tenant_role(
+CREATE OR REPLACE FUNCTION public.has_tenant_role(
     p_tenant_id UUID,
     p_roles TEXT[]
 )
@@ -107,7 +107,7 @@ CREATE POLICY "users_tenant_admin_read" ON users
         EXISTS (
             SELECT 1 FROM user_tenant_roles utr
             WHERE utr.user_id = users.id
-              AND auth.has_tenant_role(utr.tenant_id, ARRAY['owner', 'admin'])
+              AND public.has_tenant_role(utr.tenant_id, ARRAY['owner', 'admin'])
         )
     );
 
@@ -121,7 +121,7 @@ CREATE POLICY "roles_read_own" ON user_tenant_roles
 
 CREATE POLICY "roles_tenant_admin" ON user_tenant_roles
     FOR ALL USING (
-        auth.has_tenant_role(tenant_id, ARRAY['owner', 'admin'])
+        public.has_tenant_role(tenant_id, ARRAY['owner', 'admin'])
     );
 
 -- ----------------------------------------------------------------------------
@@ -132,7 +132,7 @@ CREATE POLICY "age_groups_read" ON age_groups
 
 CREATE POLICY "age_groups_write" ON age_groups
     FOR ALL USING (
-        auth.has_tenant_role(tenant_id, ARRAY['owner', 'admin'])
+        public.has_tenant_role(tenant_id, ARRAY['owner', 'admin'])
     );
 
 -- ----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ CREATE POLICY "teams_read" ON teams
 
 CREATE POLICY "teams_write" ON teams
     FOR ALL USING (
-        auth.has_tenant_role(tenant_id, ARRAY['owner', 'admin', 'staff'])
+        public.has_tenant_role(tenant_id, ARRAY['owner', 'admin', 'staff'])
     );
 
 -- ----------------------------------------------------------------------------
@@ -154,7 +154,7 @@ CREATE POLICY "swimmers_read" ON swimmers
 
 CREATE POLICY "swimmers_write" ON swimmers
     FOR ALL USING (
-        auth.has_tenant_role(tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
+        public.has_tenant_role(tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
         OR user_id IN (SELECT id FROM users WHERE auth_id = auth.uid())
     );
 
@@ -164,12 +164,12 @@ CREATE POLICY "swimmers_write" ON swimmers
 CREATE POLICY "competitions_read" ON competitions
     FOR SELECT USING (
         status_code != 'DRAFT'
-        OR auth.has_tenant_role(tenant_id, ARRAY['owner', 'admin', 'staff'])
+        OR public.has_tenant_role(tenant_id, ARRAY['owner', 'admin', 'staff'])
     );
 
 CREATE POLICY "competitions_write" ON competitions
     FOR ALL USING (
-        auth.has_tenant_role(tenant_id, ARRAY['owner', 'admin'])
+        public.has_tenant_role(tenant_id, ARRAY['owner', 'admin'])
     );
 
 -- ----------------------------------------------------------------------------
@@ -181,7 +181,7 @@ CREATE POLICY "sessions_read" ON competition_sessions
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
               AND (c.status_code != 'DRAFT'
-                   OR auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff']))
+                   OR public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff']))
         )
     );
 
@@ -190,7 +190,7 @@ CREATE POLICY "sessions_write" ON competition_sessions
         EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin'])
         )
     );
 
@@ -203,7 +203,7 @@ CREATE POLICY "events_read" ON events
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
               AND (c.status_code != 'DRAFT'
-                   OR auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff']))
+                   OR public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff']))
         )
     );
 
@@ -212,7 +212,7 @@ CREATE POLICY "events_write" ON events
         EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin'])
         )
     );
 
@@ -229,7 +229,7 @@ CREATE POLICY "entries_read" ON entries
         OR EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
         )
     );
 
@@ -238,7 +238,7 @@ CREATE POLICY "entries_write" ON entries
         EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
         )
     );
 
@@ -255,7 +255,7 @@ CREATE POLICY "results_read" ON results
         OR EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
         )
     );
 
@@ -264,7 +264,7 @@ CREATE POLICY "results_write" ON results
         EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
         )
     );
 
@@ -279,7 +279,7 @@ CREATE POLICY "team_scores_write" ON team_scores
         EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
         )
     );
 
@@ -292,7 +292,7 @@ CREATE POLICY "orders_read" ON registration_orders
         OR EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
         )
     );
 
@@ -301,7 +301,7 @@ CREATE POLICY "orders_write" ON registration_orders
         EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff'])
         )
     );
 
@@ -314,7 +314,7 @@ CREATE POLICY "payments_read" ON payment_transactions
                    OR EXISTS (
                        SELECT 1 FROM competitions c
                        WHERE c.id = ro.competition_id
-                         AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin'])
+                         AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin'])
                    ))
         )
     );
@@ -326,7 +326,7 @@ CREATE POLICY "relay_teams_write" ON relay_teams
         EXISTS (
             SELECT 1 FROM competitions c
             WHERE c.id = competition_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
         )
     );
 
@@ -337,6 +337,6 @@ CREATE POLICY "relay_members_write" ON relay_team_members
             SELECT 1 FROM relay_teams rt
             JOIN competitions c ON c.id = rt.competition_id
             WHERE rt.id = relay_team_id
-              AND auth.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
+              AND public.has_tenant_role(c.tenant_id, ARRAY['owner', 'admin', 'staff', 'coach'])
         )
     );
