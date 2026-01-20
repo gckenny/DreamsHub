@@ -1,0 +1,11 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "dreams"
+compatibility_date = "2024-12-01"
+
+# Cloudflare Pages 設定
+[pages]
+# SPA fallback - 所有路徑都導向 index.html
+[[pages.redirects]]
+from = "/*"
+to = "/index.html"
+status = 200

@@ -1,0 +1,3 @@
+# Cloudflare Pages SPA redirect
+# 所有路徑導向 index.html (支援 React Router)
+/*    /index.html   200
