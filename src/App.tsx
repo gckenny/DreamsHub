@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import HomePage from "@/routes/HomePage";
 import AuthCallback from "@/routes/AuthCallback";
+import SwimmersPage from "@/routes/SwimmersPage";
 import { useAuthStore } from "@/stores/authStore";
 
 const queryClient = new QueryClient({
@@ -27,7 +28,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        {/* TODO: Add more routes */}
+        <Route path="/swimmers" element={<SwimmersPage />} />
       </Routes>
     </BrowserRouter>
   );

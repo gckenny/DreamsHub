@@ -69,3 +69,6 @@ export { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 export { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 export { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 export { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+// Custom components
+export { PhotoUpload, type PhotoUploadProps } from "./PhotoUpload";
