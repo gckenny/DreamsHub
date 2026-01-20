@@ -13,9 +13,30 @@ import {
   Timer,
   BarChart3,
   QrCode,
+  LogOut,
+  Loader2,
 } from "lucide-react";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function HomePage() {
+  const { user, loading, signInWithGoogle, signOut } = useAuthStore();
+
+  const handleLogin = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
@@ -37,8 +58,31 @@ export default function HomePage() {
             </a>
           </nav>
           <div className="flex items-center gap-2">
-            <Button variant="ghost">登入</Button>
-            <Button>免費試用</Button>
+            {user ? (
+              <>
+                <span className="text-sm text-gray-600 hidden sm:inline">
+                  {user.email}
+                </span>
+                <Button variant="ghost" onClick={handleLogout} disabled={loading}>
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <LogOut className="h-4 w-4" />
+                  )}
+                  <span className="ml-2 hidden sm:inline">登出</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={handleLogin} disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  登入
+                </Button>
+                <Button onClick={handleLogin} disabled={loading}>
+                  免費試用
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
